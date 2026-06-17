@@ -751,8 +751,9 @@ msgstr ""
 #. Link in tags should not be touched.
 msgid "change engine suggestion"
 msgstr ""
-"Спочатку спробуйте завантажити інші версії KataGo і перевірте, чи допоможе "
-"зміна виконуваного файлу в {link}."
+"Спочатку натисніть «Повторити», щоб перезапустити рушій. Якщо це не "
+"допомогло, спробуйте завантажити версії KataGo та змінити виконуваний файл у"
+" {link} ."
 
 #. Link in tags should not be touched (uses link_here msgid)
 msgid "go to engine help page"
@@ -1060,3 +1061,86 @@ msgstr "Дістанція до стінки"
 #. tsumego: ko is good enough?
 msgid "tsumego:ko"
 msgstr "Дозволити ко?"
+
+#. TODO
+msgid "ai:human"
+msgstr "Humanlike Model"
+
+#. TODO
+msgid "ai:pro"
+msgstr "Historical Pro"
+
+#. TODO
+msgid "aihelp:pro"
+msgstr ""
+"Picks moves according to a humanlike KataGo model. Specifically, Imitate pro"
+" and strong insei moves based on historical game records from the specified "
+"year and surrounding years."
+
+#. TODO
+msgid "aihelp:human"
+msgstr ""
+"Picks moves according to a humanlike KataGo model. If 'modern_style' is "
+"ticked, the model will play according to a post-2016 AlphaZero opening "
+"style."
+
+#. TODO
+msgid "engine:humanlike_model"
+msgstr "Path to human-like model"
+
+#. TODO
+msgid "engine:remote_url"
+msgstr "KataGo WebSocket URL"
+
+#. TODO
+msgid "engine:remote_url:hint"
+msgstr "Leave blank to use a local KataGo engine. Use ws:// or wss://."
+
+#. TODO
+msgid "Remote KataGo URL is empty"
+msgstr "Remote KataGo URL is empty"
+
+#. TODO
+msgid "Remote KataGo URL must start with ws:// or wss://"
+msgstr "Remote KataGo URL must start with ws:// or wss://"
+
+#. TODO
+msgid "Connecting to remote KataGo failed"
+msgstr "Connecting to remote KataGo at {url} failed: {error}"
+
+#. TODO
+msgid "Remote KataGo engine disconnected"
+msgstr "Remote KataGo engine disconnected: {error}"
+
+#. Shown instead of "engine died popup opening message" for remote
+#. engines.
+msgid "remote engine disconnected popup opening message"
+msgstr ""
+"З'єднання з віддаленим рушієм KataGo втрачено й не вдалося відновити автоматично.\n"
+"\n"
+"Помилка: [color=#CC2222]{error_message}[/color]\n"
+"\n"
+"Код помилки: [color=#CC2222]{code}[/color]."
+
+#. Button to reconnect/restart the engine from the recovery popup.
+msgid "engine recovery: retry"
+msgstr "Повторити"
+
+#. Link in tags should not be touched. Shown for remote engines.
+msgid "remote engine check url suggestion"
+msgstr ""
+"Якщо віддалений рушій раніше працював, натисніть «Повторити», щоб "
+"під'єднатися знову, коли він стане доступним. Інакше перевірте URL-адресу "
+"віддаленого рушія в {link} ."
+
+msgid "engine:tab:local"
+msgstr "Локальний рушій"
+
+msgid "engine:tab:remote"
+msgstr "Віддалений рушій"
+
+msgid "engine:tab:custom"
+msgstr "Власна команда"
+
+msgid "engine:backend:note"
+msgstr "Вибрана вкладка визначає використовуваний рушій."

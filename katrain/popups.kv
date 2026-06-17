@@ -1,11 +1,13 @@
-#:kivy 1.11.0
+#:kivy 2.3.0
 #:import i18n katrain.core.lang.i18n
 #:import expanduser os.path.expanduser
 #:import abspath os.path.abspath
 #:import kivy_version kivy.__version__
+#:import NoTransition kivy.uix.screenmanager.NoTransition
 
 #:import Theme katrain.gui.theme.Theme
 #:import LIGHT_GREY katrain.gui.theme.LIGHT_GREY
+#:import ORANGE katrain.gui.theme.ORANGE
 
 #:set CP_SPACING Theme.CP_SPACING
 #:set CP_SMALL_SPACING Theme.CP_SMALL_SPACING
@@ -78,189 +80,344 @@
 <SmallDescriptionLabel@DescriptionLabel>
     font_size: sp(Theme.DESC_FONT_SIZE) * 0.66
 
+<ConfigSectionGridLayout@MDGridLayout+BackgroundMixin>:
+    padding: CP_PADDING/2
+    spacing: CP_SMALL_SPACING
+    background_color: Theme.BOX_BACKGROUND_COLOR
+
 <ConfigPopup>:
     model_path: model_path
+    humanlike_model_path: humanlike_model_path
     katago_path: katago_path
     model_files: model_files
+    humanlike_model_files: humanlike_model_files
     katago_files: katago_files
     download_progress_box: download_progress_box
     katago_download_progress_box: katago_download_progress_box
-    DescriptionLabel:
-        text: i18n._('katago settings')
-        font_size: sp(Theme.DESC_FONT_SIZE) * 1.5
-    GridLayout:
-        cols: 2
-        rows: 6
-        size_hint: 1,6
-        spacing: CP_SPACING
-        DescriptionLabel:
-            text: i18n._("engine:katago")
-            size_hint: 0.33, 1
-        AnchorLayout:
-            LabelledPathInput:
-                id: katago_path
-                input_property: "engine/katago"
-                hint_text: i18n._("engine:katago:hint")
-                on_text: root.check_katas()
-        AnchorLayout:
-            size_hint: 0.33, 1
-            AutoSizedRoundedRectangleButton:
-                text: i18n._("download katago button")
-                on_press: root.download_katas()
-                size_hint_y: 0.7
-        AnchorLayout:
-            KeyValueSpinner:
-                id: katago_files
-                text: ''
-                text_autoupdate: True
-                -text_size: self.width, None
-                -halign: 'center'
-                -shorten: True
-                -shorten_from: 'right'
-                on_select:
-                    if self.selected_index != 0: katago_path.text = self.value_keys[self.selected_index]
-                size_hint_y: 0.7
-                sync_height_frac: 1.0
-                -font_size: self.height * 0.5
-                -background_color: [*[c*255/88 for c in Theme.BOX_BACKGROUND_COLOR[:3]], 1] # compensate for texture
-        DescriptionLabel:
-            text: i18n._("engine:config")
-            size_hint: 0.33, 1
-        AnchorLayout:
-            LabelledPathInput:
-                input_property: "engine/config"
-        DescriptionLabel:
-            text: i18n._("engine:model")
-            size_hint: 0.33, 1
-        AnchorLayout:
-            LabelledPathInput:
-                id: model_path
-                input_property: "engine/model"
-                on_text: root.check_models()
-        AnchorLayout:
-            size_hint: 0.33, 1
-            AutoSizedRoundedRectangleButton:
-                text: i18n._("download models button")
-                on_press: root.download_models()
-                size_hint_y: 0.7
-        AnchorLayout:
-            KeyValueSpinner:
-                id: model_files
-                text: ''
-                text_autoupdate: True
-                -text_size: self.width, None
-                -halign: 'center'
-                -shorten: True
-                -shorten_from: 'right'
-                on_select:
-                    if self.selected_index != 0: model_path.text = self.value_keys[self.selected_index]
-                size_hint_y: 0.7
-                sync_height_frac: 1.0
-                -font_size: self.height * 0.5
-                -background_color: [*[c*255/88 for c in Theme.BOX_BACKGROUND_COLOR[:3]], 1] # compensate for texture
-        DescriptionLabel:
-            text: i18n._("engine:altcommand")
-            size_hint: 0.33, 1
-        AnchorLayout:
-            LabelledPathInput:
-                check_path: False
-                input_property: "engine/altcommand"
-                hint_text: i18n._("engine:altcommand:hint")
+    engine_sm: engine_sm
+    local_tab_button: local_tab_button
+    remote_tab_button: remote_tab_button
+    custom_tab_button: custom_tab_button
+
+    # Top Section - Engine source header
     BoxLayout:
-        size_hint: 1,1
         orientation: 'horizontal'
+        size_hint_y: None
+        height: dp(36)
+        padding: dp(10), 0
+
+        DescriptionLabel:
+            text: i18n._('katago settings')
+            font_size: sp(Theme.DESC_FONT_SIZE) * 1.5
+            halign: 'left'
+
+    # Engine backend tabs, with the "tab is authoritative" note to their right
+    MDBoxLayout:
+        orientation: 'horizontal'
+        size_hint_y: None
+        height: dp(40)
+        spacing: dp(6)
+        padding: dp(8), 0
+
+        SizedRectangleToggleButton:
+            id: local_tab_button
+            size_hint: 0.22, 1
+            group: 'engine_backend'
+            allow_no_selection: False
+            text: i18n._('engine:tab:local')
+            on_release: engine_sm.current = 'local'
+
+        SizedRectangleToggleButton:
+            id: remote_tab_button
+            size_hint: 0.22, 1
+            group: 'engine_backend'
+            allow_no_selection: False
+            text: i18n._('engine:tab:remote')
+            on_release: engine_sm.current = 'remote'
+
+        SizedRectangleToggleButton:
+            id: custom_tab_button
+            size_hint: 0.22, 1
+            group: 'engine_backend'
+            allow_no_selection: False
+            text: i18n._('engine:tab:custom')
+            on_release: engine_sm.current = 'custom'
+
+        DescriptionLabel:
+            size_hint_x: 0.4
+            text: i18n._('engine:backend:note')
+            color: ORANGE
+            halign: 'left'
+            valign: 'center'
+            padding: dp(10), 0
+
+    # Engine backend content - one screen per tab
+    ScreenManager:
+        id: engine_sm
+        size_hint: (1, 6)
+        transition: NoTransition()
+
+        Screen:
+            name: 'local'
+            MDBoxLayout:
+                orientation: 'vertical'
+                spacing: dp(12)
+                padding: dp(10)
+
+                # KataGo executable - download button sits under its label
+                ConfigSectionGridLayout:
+                    cols: 2
+                    MDBoxLayout:
+                        orientation: 'vertical'
+                        size_hint_x: 0.33
+                        spacing: dp(6)
+                        DescriptionLabel:
+                            text: i18n._("engine:katago")
+                        AnchorLayout:
+                            size_hint_y: None
+                            height: dp(34)
+                            AutoSizedRoundedRectangleButton:
+                                text: i18n._("download katago button")
+                                on_press: root.download_katas()
+                                size_hint: None, None
+                                height: dp(32)
+                    MDBoxLayout:
+                        orientation: 'vertical'
+                        AnchorLayout:
+                            LabelledPathInput:
+                                id: katago_path
+                                input_property: "engine/katago"
+                                hint_text: i18n._("engine:katago:hint")
+                                on_text: root.check_katas()
+                        AnchorLayout:
+                            KeyValueSpinner:
+                                id: katago_files
+                                text: ''
+                                text_autoupdate: True
+                                size_hint_y: 0.7
+                                on_select: if self.selected_index != 0: katago_path.text = self.value_keys[self.selected_index]
+
+                # Model - download button sits under its label
+                ConfigSectionGridLayout:
+                    cols: 2
+                    MDBoxLayout:
+                        orientation: 'vertical'
+                        size_hint_x: 0.33
+                        spacing: dp(6)
+                        DescriptionLabel:
+                            text: i18n._("engine:model")
+                        AnchorLayout:
+                            size_hint_y: None
+                            height: dp(34)
+                            AutoSizedRoundedRectangleButton:
+                                text: i18n._("download models button")
+                                on_press: root.download_models()
+                                size_hint: None, None
+                                height: dp(32)
+                    MDBoxLayout:
+                        orientation: 'vertical'
+                        AnchorLayout:
+                            LabelledPathInput:
+                                id: model_path
+                                input_property: "engine/model"
+                                on_text: root.check_models()
+                        AnchorLayout:
+                            KeyValueSpinner:
+                                id: model_files
+                                text: ''
+                                text_autoupdate: True
+                                size_hint_y: 0.7
+                                on_select: if self.selected_index != 0: model_path.text = self.value_keys[self.selected_index]
+
+                # Human-like model
+                ConfigSectionGridLayout:
+                    cols: 2
+                    DescriptionLabel:
+                        text: i18n._("engine:humanlike_model")
+                        size_hint_x: 0.33
+                    MDBoxLayout:
+                        orientation: 'vertical'
+                        AnchorLayout:
+                            LabelledPathInput:
+                                id: humanlike_model_path
+                                input_property: "engine/humanlike_model"
+                                on_text: root.check_models()
+                        AnchorLayout:
+                            KeyValueSpinner:
+                                id: humanlike_model_files
+                                text: ''
+                                text_autoupdate: True
+                                size_hint_y: 0.7
+                                on_select: if self.selected_index != 0: humanlike_model_path.text = self.value_keys[self.selected_index]
+
+                # KataGo config file
+                ConfigSectionGridLayout:
+                    cols: 2
+                    DescriptionLabel:
+                        text: i18n._("engine:config")
+                        size_hint_x: 0.33
+                    AnchorLayout:
+                        LabelledPathInput:
+                            input_property: "engine/config"
+
+        Screen:
+            name: 'remote'
+            MDBoxLayout:
+                orientation: 'vertical'
+                spacing: dp(12)
+                padding: dp(10)
+                ConfigSectionGridLayout:
+                    cols: 2
+                    size_hint_y: None
+                    height: dp(70)
+                    DescriptionLabel:
+                        text: i18n._("engine:remote_url")
+                        size_hint_x: 0.33
+                    AnchorLayout:
+                        LabelledPathInput:
+                            check_path: False
+                            input_property: "engine/remote_url"
+                            hint_text: i18n._("engine:remote_url:hint")
+                Widget:
+
+        Screen:
+            name: 'custom'
+            MDBoxLayout:
+                orientation: 'vertical'
+                spacing: dp(12)
+                padding: dp(10)
+                ConfigSectionGridLayout:
+                    cols: 2
+                    size_hint_y: None
+                    height: dp(70)
+                    DescriptionLabel:
+                        text: i18n._("engine:altcommand")
+                        size_hint_x: 0.33
+                    AnchorLayout:
+                        LabelledPathInput:
+                            check_path: False
+                            input_property: "engine/altcommand"
+                            hint_text: i18n._("engine:altcommand:hint")
+                Widget:
+
+    # Settings Headers
+    MDBoxLayout:
+        size_hint_y: None
+        height: dp(34)
+        orientation: 'horizontal'
+        padding: dp(10)
+        spacing: dp(20)
+
         DescriptionLabel:
             text: i18n._('general settings')
             font_size: sp(Theme.DESC_FONT_SIZE) * 1.5
+
         DescriptionLabel:
-            font_size: sp(Theme.DESC_FONT_SIZE) * 1.5
             text: i18n._('engine settings')
-    BoxLayout:
-        size_hint: 1,5
+            font_size: sp(Theme.DESC_FONT_SIZE) * 1.5
+
+    # Settings Area
+    MDBoxLayout:
+        size_hint: (1, 4)
         orientation: 'horizontal'
-        GridLayout:
+        padding: dp(10)
+        spacing: dp(20)
+
+        # General Settings
+        ConfigSectionGridLayout:
             cols: 2
-            rows: 4
             spacing: CP_SPACING
+            padding: CP_PADDING
+
             DescriptionLabel:
                 text: i18n._('count down sound')
+                size_hint_x: 1.5
             AnchorLayout:
                 LabelledCheckBox:
                     input_property: "timer/sound"
+
             DescriptionLabel:
                 text: i18n._("general:anim_pv_time")
+                size_hint_x: 1.5
             AnchorLayout:
                 LabelledFloatInput:
                     input_property: "general/anim_pv_time"
                     hint_text: i18n._("engine:time:hint")
+
+            DescriptionLabel:
+                text: 'Restore window size on startup'
+                size_hint_x: 1.5
+            AnchorLayout:
+                LabelledCheckBox:
+                    input_property: "ui_state/restoresize"
+
             DescriptionLabel:
                 text: i18n._("general:debug_level")
+                size_hint_x: 1.5
             AnchorLayout:
                 LabelledIntInput:
                     input_property: "general/debug_level"
                     helper_text: i18n._("general:debug_level:hint")
                     helper_text_mode: "on_focus"
-            DescriptionLabel:
-                text: 'Restore window size on startup'
-            AnchorLayout:
-                LabelledCheckBox:
-                    input_property: "ui_state/restoresize"
-        BackgroundMixin:
-            background_color: LIGHT_GREY
-            size_hint: None, 1
-            width: 2
-        GridLayout:
+
+        # Engine Settings
+        ConfigSectionGridLayout:
             cols: 2
-            rows: 4
-            spacing: CP_SPACING
-            padding: CP_PADDING*2,0,0,0
+
             DescriptionLabel:
                 text: i18n._("engine:max_visits")
+                size_hint_x: 1.5
             AnchorLayout:
                 LabelledIntInput:
                     input_property: "engine/max_visits"
+
             DescriptionLabel:
                 text: i18n._("engine:fast_visits")
+                size_hint_x: 1.5
             AnchorLayout:
                 LabelledIntInput:
                     input_property: "engine/fast_visits"
+
             DescriptionLabel:
                 text: i18n._("engine:max_time")
+                size_hint_x: 1.5
             AnchorLayout:
                 LabelledFloatInput:
                     input_property: "engine/max_time"
                     hint_text: i18n._("engine:time:hint")
+
             DescriptionLabel:
                 text: i18n._("engine:wide_root_noise")
+                size_hint_x: 1.5
             AnchorLayout:
                 LabelledFloatInput:
                     input_property: "engine/wide_root_noise"
                     hint_text: i18n._("engine:wide_root_noise:hint")
+
+    # Bottom Section - Progress and Update Button
     MDBoxLayout:
         orientation: 'horizontal'
-        size_hint: 1,2
+        size_hint_y: 1
+
         MDBoxLayout:
-            size_hint_x: 3.5 if self.children else 0.0001
+            size_hint_x: 3 if self.children else 0.0001
             orientation: 'vertical'
             id: download_progress_box
+
         MDBoxLayout:
-            size_hint_x: 3.5 if self.children else 0.0001
+            size_hint_x: 3 if self.children else 0.0001
             orientation: 'vertical'
             id: katago_download_progress_box
+
         AnchorLayout:
             AutoSizedRoundedRectangleButton:
-                padding_x: 15
-                size_hint: None,None
-                height: sp(40)
                 text: i18n._("update settings")
+                size_hint: (None, None)
+                height: dp(40)
+                padding_x: dp(15)
                 on_press: root.update_config(True)
-#       BoxLayout:
-#            orientation: 'vertical'
-#            SmallDescriptionLabel:
-#                text: i18n._('config file path')
-#            SmallDescriptionLabel:
-#                id: configfile
-#                text:
+
+
 
 <ContributePopup>:
     katago_path: katago_path
@@ -804,14 +961,23 @@
             on_press: root.update_config(True)
 
 <EngineRecoveryPopup>:
+    orientation: 'vertical'
     Label:
+        size_hint: 1, 0.85
         padding: CP_PADDING, CP_PADDING*3
-        text: i18n._("engine died popup opening message").format(code=root.code,error_message=root.error_message) + "\n\n" +  i18n._("change engine suggestion").format(link="[color=#CCCC11][u][ref=engine_settings]"+i18n._('menu:settings')+"[/ref][/u][/color]") + "\n\n" +  i18n._("go to engine help page").format(link="[color=#CCCC11][u][ref=engine_help]"+i18n._('link_here')+"[/ref][/u][/color]")
+        text: root.recovery_message
         text_size: self.size
         font_size: sp(Theme.DESC_FONT_SIZE)
         markup: True
         valign: 'top'
         on_ref_press:  app.webbrowser('engine:help') if args[1]=='engine_help' else  app.gui('config-popup')
+    AnchorLayout:
+        size_hint: 1, 0.15
+        AutoSizedRoundedRectangleButton:
+            padding_x: 15
+            size_hint: None, 0.66
+            text: i18n._("engine recovery: retry")
+            on_release: root.retry()
 
 
 

@@ -470,7 +470,7 @@ msgstr ""
 "별도의 설정은 없습니다."
 
 msgid "ai:jigo"
-msgstr "KataJigo"
+msgstr "조금만 이기기"
 
 msgid "aihelp:jigo"
 msgstr "다른 제한 없이 지정한 집 수만큼(기본값 0.5) 이기고자 합니다."
@@ -867,7 +867,9 @@ msgid "go to engine help page"
 msgstr "아직 문제를 겪고 있으시다면, {link}에서 최신 문제 해결법을 찾아보십시오."
 
 msgid "change engine suggestion"
-msgstr "우선, KataGo 버전들을 내려받아 보시고, {link}에서 다른 실행 파일로 바꾸면 괜찮아지는지 확인해 보십시오."
+msgstr ""
+"먼저 다시 시도를 눌러 엔진을 다시 시작하세요. 그래도 해결되지 않으면 {link} 에서 KataGo 버전을 내려받아 다른 실행 파일로 "
+"변경해 보세요."
 
 msgid "link_here"
 msgstr "여기"
@@ -940,3 +942,73 @@ msgstr "수를 제한"
 
 msgid "contribute:passwordwarning"
 msgstr "(평문으로 저장하니, 다른 곳에서 재사용하지 마십시오)"
+
+msgid "ai:human"
+msgstr "사람 흉내"
+
+msgid "ai:pro"
+msgstr "역대 프로 기사"
+
+msgid "aihelp:pro"
+msgstr ""
+"사람처럼 흉내내는 KataGo 모델에 따라 둡니다. "
+"정확히 말하면, pro_year에서 지정한 연도쯤에 프로 기사와 연구생이 두었던 역대 기보를 흉내냅니다."
+
+msgid "aihelp:human"
+msgstr ""
+"사람처럼 흉내내는 KataGo 모델에 따라 둡니다. "
+"human_kyu_rank에서 흉내낼 기력을 설정하십시오. "
+"modern_style을 체크하면, 2016년 이후 알파제로의 포석 스타일에 따라 둡니다. "
+
+msgid "engine:humanlike_model"
+msgstr "사람 흉내 모델의 경로"
+
+msgid "engine:remote_url"
+msgstr "KataGo 웹소켓 URL"
+
+msgid "engine:remote_url:hint"
+msgstr "로컬 KataGo 엔진을 사용할 때는 비워두십시오. ws:// 또는 wss:// 를 사용하십시오."
+
+msgid "Remote KataGo URL is empty"
+msgstr "원격 KataGo URL 이 비어 있습니다."
+
+msgid "Remote KataGo URL must start with ws:// or wss://"
+msgstr "원격 KataGo URL 은 반드시 ws:// 또는 wss:// 로 시작해야 합니다."
+
+msgid "Connecting to remote KataGo failed"
+msgstr "{url}에 있는 원격 KataGo에 접속하지 못했습니다: {error}"
+
+msgid "Remote KataGo engine disconnected"
+msgstr "원격 KataGo 엔진 연결이 끊어졌습니다: {error}"
+
+#. Shown instead of "engine died popup opening message" for remote
+#. engines.
+msgid "remote engine disconnected popup opening message"
+msgstr ""
+"원격 KataGo 엔진과의 연결이 끊겼으며 자동으로 다시 연결하지 못했습니다.\n"
+"\n"
+"오류: [color=#CC2222]{error_message}[/color]\n"
+"\n"
+"오류 코드: [color=#CC2222]{code}[/color]."
+
+#. Button to reconnect/restart the engine from the recovery popup.
+msgid "engine recovery: retry"
+msgstr "다시 시도"
+
+#. Link in tags should not be touched. Shown for remote engines.
+msgid "remote engine check url suggestion"
+msgstr ""
+"원격 엔진이 이전에 작동한 적이 있다면, 다시 사용 가능해졌을 때 다시 시도를 눌러 재연결하세요. 그렇지 않으면 {link} 에서 원격 "
+"엔진 URL을 다시 확인하세요."
+
+msgid "engine:tab:local"
+msgstr "로컬 엔진"
+
+msgid "engine:tab:remote"
+msgstr "원격 엔진"
+
+msgid "engine:tab:custom"
+msgstr "사용자 지정 명령"
+
+msgid "engine:backend:note"
+msgstr "선택한 탭이 사용할 엔진을 결정합니다."

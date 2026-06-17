@@ -26,6 +26,25 @@ from katrain.core.lang import i18n
 from katrain.core.sgf_parser import Move
 from katrain.core.utils import find_package_resource, json_truncate_arrays
 
+ENGINE_BACKENDS = ("local", "remote", "custom")
+
+
+def resolve_engine_backend(config) -> str:
+    """Which engine backend to use: 'local', 'remote' or 'custom'.
+
+    Uses the explicit `engine/backend` setting when present (set by the engine
+    settings tabs). Falls back to deriving it from the legacy fields so older
+    configs keep working: a remote_url means remote, an altcommand means custom.
+    """
+    backend = (config.get("backend") or "").strip().lower()
+    if backend in ENGINE_BACKENDS:
+        return backend
+    if (config.get("remote_url") or "").strip():
+        return "remote"
+    if (config.get("altcommand") or "").strip():
+        return "custom"
+    return "local"
+
 
 class BaseEngine:  # some common elements between analysis and contribute engine
 
@@ -95,6 +114,7 @@ class KataGoEngine(BaseEngine):
     """Starts and communicates with the KataGO analysis engine"""
 
     PONDER_KEY = "_kt_continuous"
+    ENGINE_TYPE = "local"  # passed to the recovery popup so it can tailor its advice
 
     def __init__(self, katrain, config):
         super().__init__(katrain, config)
@@ -112,30 +132,41 @@ class KataGoEngine(BaseEngine):
         self.shell = False
         self.write_queue = queue.Queue()
         self.thread_lock = threading.Lock()
-        if config.get("altcommand", ""):
+        if resolve_engine_backend(config) == "custom":
             self.command = config["altcommand"]
             self.shell = True
         else:
             model = find_package_resource(config["model"])
             cfg = find_package_resource(config["config"])
             exe = self.get_engine_path(config.get("katago", "").strip())
+            
             if not exe:
                 return
-            if not os.path.isfile(model):
-                self.on_error(i18n._("Kata model not found").format(model=model), code="KATAGO-FILES")
-                return  # don't start
-            if not os.path.isfile(cfg):
-                self.on_error(i18n._("Kata config not found").format(config=cfg), code="KATAGO-FILES")
-                return  # don't start
-            self.command = shlex.split(
-                f'"{exe}" analysis -model "{model}" -config "{cfg}" -override-config "homeDataDir={os.path.expanduser(DATA_FOLDER)}"'
-            )
+                
+            # Add human model to command if provided
+            if config.get("humanlike_model", ""):
+                human_model_path = find_package_resource(config.get("humanlike_model",""))
+                if os.path.isfile(human_model_path):
+                    self.command = shlex.split(
+                        f'"{exe}" analysis -model "{model}" -human-model "{human_model_path}" -config "{cfg}" -override-config "homeDataDir={os.path.expanduser(DATA_FOLDER)}"'
+                    )
+                else:
+                    self.katrain.log(f"Human model not found at {human_model_path}", -1)
+                    # Fall back to regular command without human model
+                    self.command = shlex.split(
+                        f'"{exe}" analysis -model "{model}" -config "{cfg}" -override-config "homeDataDir={os.path.expanduser(DATA_FOLDER)}"'
+                    )
+            else:
+                # Regular command without human model
+                self.command = shlex.split(
+                    f'"{exe}" analysis -model "{model}" -config "{cfg}" -override-config "homeDataDir={os.path.expanduser(DATA_FOLDER)}"'
+                )
         self.start()
 
     def on_error(self, message, code=None, allow_popup=True):
         self.katrain.log(message, OUTPUT_ERROR)
         if self.allow_recovery and allow_popup:
-            self.katrain("engine_recovery_popup", message, code)
+            self.katrain("engine_recovery_popup", message, code, self.ENGINE_TYPE)
 
     def start(self):
         with self.thread_lock:
@@ -381,6 +412,7 @@ class KataGoEngine(BaseEngine):
         ownership: Optional[bool] = None,
         next_move: Optional[GameNode] = None,
         extra_settings: Optional[Dict] = None,
+        include_policy=True,
         report_every: Optional[float] = None,
     ):
         nodes = analysis_node.nodes_from_root
@@ -444,7 +476,7 @@ class KataGoEngine(BaseEngine):
             "boardYSize": size_y,
             "includeOwnership": ownership and not next_move,
             "includeMovesOwnership": ownership and not next_move,
-            "includePolicy": not next_move,
+            "includePolicy": include_policy,
             "initialStones": [[m.player, m.gtp()] for m in initial_stones],
             "initialPlayer": analysis_node.initial_player,
             "moves": [[m.player, m.gtp()] for m in moves],

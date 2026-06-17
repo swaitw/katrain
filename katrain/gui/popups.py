@@ -24,6 +24,7 @@ from kivymd.uix.selectioncontrol import MDCheckbox
 from kivymd.uix.textfield import MDTextField
 
 from katrain.core.ai import ai_rank_estimation, game_report
+from katrain.core.engine import resolve_engine_backend
 from katrain.core.constants import (
     AI_CONFIG_DEFAULT,
     AI_DEFAULT,
@@ -39,7 +40,6 @@ from katrain.core.constants import (
     PLAYER_HUMAN,
     ADDITIONAL_MOVE_ORDER,
 )
-from katrain.core.engine import KataGoEngine
 from katrain.core.lang import i18n, rank_label
 from katrain.core.sgf_parser import Move
 from katrain.core.utils import PATHS, find_package_resource, evaluation_class
@@ -455,11 +455,36 @@ class ConfigAIPopup(QuickConfigGui):
 class EngineRecoveryPopup(QuickConfigGui):
     error_message = StringProperty("")
     code = ObjectProperty(None)
+    engine_type = StringProperty("local")
+    recovery_message = StringProperty("")
 
-    def __init__(self, katrain, error_message, code):
+    def __init__(self, katrain, error_message, code, engine_type="local"):
         super().__init__(katrain)
         self.error_message = str(error_message)
         self.code = code
+        self.engine_type = engine_type or "local"
+        self.recovery_message = self._build_message()
+
+    def _build_message(self):
+        settings_link = "[color=#CCCC11][u][ref=engine_settings]" + i18n._("menu:settings") + "[/ref][/u][/color]"
+        help_link = "[color=#CCCC11][u][ref=engine_help]" + i18n._("link_here") + "[/ref][/u][/color]"
+        if self.engine_type == "remote":
+            opening_key = "remote engine disconnected popup opening message"
+            suggestion = i18n._("remote engine check url suggestion").format(link=settings_link)
+        else:
+            opening_key = "engine died popup opening message"
+            suggestion = i18n._("change engine suggestion").format(link=settings_link)
+        opening = i18n._(opening_key).format(code=self.code, error_message=self.error_message)
+        help_text = i18n._("go to engine help page").format(link=help_link)
+        return opening + "\n\n" + suggestion + "\n\n" + help_text
+
+    def retry(self):
+        """Rebuild the engine from current config and re-analyze. For a
+        remote engine this reconnects; for a local one it respawns the
+        subprocess. Recovers a transient failure without changing settings."""
+        if self.popup:
+            self.popup.dismiss()
+        Clock.schedule_once(lambda _dt: self.katrain.restart_engine(), 0)
 
 
 class BaseConfigPopup(QuickConfigGui):
@@ -469,6 +494,7 @@ class BaseConfigPopup(QuickConfigGui):
     }
     MODELS = {
         "old 15 block model": "https://github.com/lightvector/KataGo/releases/download/v1.3.2/g170e-b15c192-s1672170752-d466197061.txt.gz",
+        "Human-like model": "https://github.com/lightvector/KataGo/releases/download/v1.15.0/b18c384nbt-humanv0.bin.gz",
     }
     MODEL_DESC = {
         "Fat 40 block model": "https://d3dndmfyhecmj0.cloudfront.net/g170/neuralnets/g170e-b40c384x2-s2348692992-d1229892979.zip",
@@ -480,23 +506,28 @@ class BaseConfigPopup(QuickConfigGui):
 
     KATAGOS = {
         "win": {
-            "OpenCL v1.16.0": "https://github.com/lightvector/KataGo/releases/download/v1.16.0/katago-v1.16.0-opencl-windows-x64.zip",
-            "Eigen AVX2 (Modern CPUs) v1.16.0": "https://github.com/lightvector/KataGo/releases/download/v1.16.0/katago-v1.16.0-eigenavx2-windows-x64.zip",
-            "Eigen (CPU, Non-optimized) v1.16.0": "https://github.com/lightvector/KataGo/releases/download/v1.16.0/katago-v1.16.0-eigen-windows-x64.zip",
-            "OpenCL v1.16.0 (bigger boards)": "https://github.com/lightvector/KataGo/releases/download/v1.16.0/katago-v1.16.0-opencl-windows-x64+bs50.zip",
+            "OpenCL v1.16.5": "https://github.com/lightvector/KataGo/releases/download/v1.16.5/katago-v1.16.5-opencl-windows-x64.zip",
+            "Eigen AVX2 (Modern CPUs) v1.16.5": "https://github.com/lightvector/KataGo/releases/download/v1.16.5/katago-v1.16.5-eigenavx2-windows-x64.zip",
+            "Eigen (CPU, Non-optimized) v1.16.5": "https://github.com/lightvector/KataGo/releases/download/v1.16.5/katago-v1.16.5-eigen-windows-x64.zip",
+            "OpenCL v1.16.5 (bigger boards)": "https://github.com/lightvector/KataGo/releases/download/v1.16.5/katago-v1.16.5-opencl-windows-x64+bs50.zip",
         },
         "linux": {
-            "OpenCL v1.16.0": "https://github.com/lightvector/KataGo/releases/download/v1.16.0/katago-v1.16.0-opencl-linux-x64.zip",
-            "Eigen AVX2 (Modern CPUs) v1.16.0": "https://github.com/lightvector/KataGo/releases/download/v1.16.0/katago-v1.16.0-eigenavx2-linux-x64.zip",
-            "Eigen (CPU, Non-optimized) v1.16.0": "https://github.com/lightvector/KataGo/releases/download/v1.16.0/katago-v1.16.0-eigen-linux-x64.zip",            
-            "OpenCL v1.16.0 (bigger boards)": "https://github.com/lightvector/KataGo/releases/download/v1.16.0/katago-v1.16.0-opencl-linux-x64+bs50.zip",
+            "OpenCL v1.16.5": "https://github.com/lightvector/KataGo/releases/download/v1.16.5/katago-v1.16.5-opencl-linux-x64.zip",
+            "Eigen AVX2 (Modern CPUs) v1.16.5": "https://github.com/lightvector/KataGo/releases/download/v1.16.5/katago-v1.16.5-eigenavx2-linux-x64.zip",
+            "Eigen (CPU, Non-optimized) v1.16.5": "https://github.com/lightvector/KataGo/releases/download/v1.16.5/katago-v1.16.5-eigen-linux-x64.zip",
+            "OpenCL v1.16.5 (bigger boards)": "https://github.com/lightvector/KataGo/releases/download/v1.16.5/katago-v1.16.5-opencl-linux-x64+bs50.zip",
         },
         "just-descriptions": {},
     }
 
     def __init__(self, katrain):
         super().__init__(katrain)
-        self.paths = [self.katrain.config("engine/model"), "katrain/models", DATA_FOLDER]
+        self.paths = [
+            self.katrain.config("engine/model"),
+            self.katrain.config("engine/humanlike_model"),
+            "katrain/models",
+            DATA_FOLDER,
+        ]
         self.katago_paths = [self.katrain.config("engine/katago"), DATA_FOLDER]
         self.last_clicked_download_models = 0
 
@@ -519,9 +550,10 @@ class BaseConfigPopup(QuickConfigGui):
 
         done = set()
         model_files = []
+        humanlike_model_files = []
         distributed_training_models = os.path.expanduser(os.path.join(DATA_FOLDER, "katago_contribute/kata1/models"))
-        for path in self.paths + [self.model_path.text, distributed_training_models]:
-            path = path.rstrip("/\\")
+        for path in self.paths + [self.model_path.text, self.humanlike_model_path.text, distributed_training_models]:
+            path = (path or "").rstrip("/\\")
             if path.startswith("katrain"):
                 path = path.replace("katrain", PATHS["PACKAGE"].rstrip("/\\"), 1)
             path = os.path.expanduser(path)
@@ -540,6 +572,9 @@ class BaseConfigPopup(QuickConfigGui):
             if files and path not in self.paths:
                 self.paths.append(path)  # persistent on paths with models found
             model_files += files
+            for file in files:
+                if "human" in file:
+                    humanlike_model_files.append(file)
 
         # no description to bottom
         model_files = sorted(
@@ -550,6 +585,17 @@ class BaseConfigPopup(QuickConfigGui):
         self.model_files.values = [models_available_msg] + [desc for desc, path in model_files]
         self.model_files.value_keys = [""] + [path for desc, path in model_files]
         self.model_files.text = models_available_msg
+
+        humanlike_model_files = sorted(
+            [(find_description(path), path) for path in humanlike_model_files],
+            key=lambda descpath: ("Recommended" not in descpath[0], "  -  " not in descpath[0], descpath[0]),
+        )
+        humanlike_models_available_msg = i18n._("models available").format(num=len(humanlike_model_files))
+        self.humanlike_model_files.values = [humanlike_models_available_msg] + [
+            desc for desc, path in humanlike_model_files
+        ]
+        self.humanlike_model_files.value_keys = [""] + [path for desc, path in humanlike_model_files]
+        self.humanlike_model_files.text = humanlike_models_available_msg
 
     def check_katas(self, *args):
         def find_description(path):
@@ -636,7 +682,9 @@ class BaseConfigPopup(QuickConfigGui):
 
         for name, url in {**self.MODELS, **dist_models}.items():
             filename = os.path.split(url)[1]
-            if not any(os.path.split(f)[1] == filename for f in self.model_files.values):
+            if not any(
+                os.path.split(f)[1] == filename for f in self.model_files.values + self.humanlike_model_files.values
+            ):
                 savepath = os.path.expanduser(os.path.join(DATA_FOLDER, filename))
                 savepath_tmp = savepath + ".part"
                 self.katrain.log(f"Downloading {name} from {url} to {savepath_tmp}", OUTPUT_INFO)
@@ -745,14 +793,28 @@ class BaseConfigPopup(QuickConfigGui):
 
 
 class ConfigPopup(BaseConfigPopup):
+    ENGINE_TAB_BUTTONS = {"local": "local_tab_button", "remote": "remote_tab_button", "custom": "custom_tab_button"}
+
     def __init__(self, katrain):
         super().__init__(katrain)
         Clock.schedule_once(self.check_katas)
+        Clock.schedule_once(self.select_engine_tab)
         MDApp.get_running_app().bind(language=self.check_models)
         MDApp.get_running_app().bind(language=self.check_katas)
 
+    def select_engine_tab(self, *_args):
+        # The active tab is authoritative for which engine is used; pick it based on the current config.
+        backend = resolve_engine_backend(self.katrain.config("engine"))
+        self.engine_sm.current = backend
+        getattr(self, self.ENGINE_TAB_BUTTONS[backend]).state = "down"
+
     def update_config(self, save_to_file=True, close_popup=True):
+        old_backend = self.katrain.config("engine/backend", "")
+        backend = self.engine_sm.current
+        self.katrain._config["engine"]["backend"] = backend
         updated = super().update_config(save_to_file=save_to_file, close_popup=close_popup)
+        if backend != old_backend:
+            updated.add("engine/backend")
         self.katrain.debug_level = self.katrain.config("general/debug_level", OUTPUT_INFO)
 
         ignore = {"max_visits", "fast_visits", "max_time", "enable_ownership", "wide_root_noise"}
@@ -760,21 +822,8 @@ class ConfigPopup(BaseConfigPopup):
         if detected_restart:
 
             def restart_engine(_dt):
-                self.katrain.controls.set_status("", STATUS_INFO)
                 self.katrain.log(f"Restarting Engine after {detected_restart} settings change")
-                self.katrain.controls.set_status(i18n._("restarting engine"), STATUS_INFO)
-
-                old_engine = self.katrain.engine  # type: KataGoEngine
-                old_proc = old_engine.katago_process
-                if old_proc:
-                    old_engine.shutdown(finish=False)
-                new_engine = KataGoEngine(self.katrain, self.katrain.config("engine"))
-                self.katrain.engine = new_engine
-                self.katrain.game.engines = {"B": new_engine, "W": new_engine}
-                self.katrain.game.analyze_all_nodes(
-                    analyze_fast=True
-                )  # old engine was possibly broken, so make sure we redo any failures
-                self.katrain.update_state()
+                self.katrain.restart_engine()
 
             Clock.schedule_once(restart_engine, 0)
 
